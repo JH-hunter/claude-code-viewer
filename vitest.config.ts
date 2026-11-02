@@ -13,6 +13,9 @@ const config = defineConfig({
     env: {
       ENVIRONMENT: "local",
     },
+    // Fork workers time out during startup on slow filesystems (e.g. WSL
+    // DrvFS mounts) when too many are spawned in parallel.
+    maxWorkers: 4,
   },
 });
 
