@@ -18,6 +18,7 @@ import { createConfigMiddleware } from "../middleware/config.middleware.ts";
 import { getHonoRuntime } from "../runtime.ts";
 import { authRoutes } from "./authRoutes.ts";
 import { claudeCodeRoutes } from "./claudeCodeRoutes.ts";
+import { configsRoutes } from "./configsRoutes.ts";
 import { featureFlagRoutes } from "./featureFlagRoutes.ts";
 import { fileSystemRoutes } from "./fileSystemRoutes.ts";
 import { notificationRoutes } from "./notificationRoutes.ts";
@@ -125,6 +126,7 @@ export const routes = (app: HonoAppType, options: CliOptions) =>
         // core routes
         .route("/api/projects", yield* projectRoutes)
         .route("/api/claude-code", yield* claudeCodeRoutes)
+        .route("/api/configs", yield* configsRoutes)
         .route("/api/scheduler", yield* schedulerRoutes)
         .route("/api/file-system", yield* fileSystemRoutes)
         .route("/api/search", yield* searchRoutes)

@@ -97,6 +97,19 @@ export const sessionDetailQuery = (projectId: string, sessionId: string) =>
     },
   }) as const;
 
+export const configsQuery = {
+  queryKey: ["configs"],
+  queryFn: async () => {
+    const response = await honoClient.api.configs.$get({});
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch configs: ${response.statusText}`);
+    }
+
+    return await response.json();
+  },
+} as const;
+
 export const claudeCommandsQuery = (projectId: string) =>
   ({
     queryKey: ["claude-commands", projectId],
