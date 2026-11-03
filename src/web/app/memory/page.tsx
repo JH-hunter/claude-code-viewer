@@ -53,9 +53,16 @@ export const MemoryPage: FC = () => {
               }`}
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="break-all text-sm font-medium">{project.projectDir}</span>
+                <span className="break-all text-sm font-medium">
+                  {project.projectPath ?? project.projectDir}
+                </span>
                 <Badge variant="secondary">{project.memories.length}</Badge>
               </div>
+              {project.projectPath !== undefined && (
+                <div className="mt-0.5 break-all text-xs text-muted-foreground">
+                  {project.projectDir}
+                </div>
+              )}
             </button>
           ))}
 

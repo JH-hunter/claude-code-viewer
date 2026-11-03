@@ -16,13 +16,45 @@ type MemoryFileEntry = {
 
 type ProjectMemoryEntry = {
   projectDir: string;
+  projectPath?: string;
   memories: MemoryFileEntry[];
 };
+
+const encodeProjectPath = (projectPath: string): string =>
+  projectPath.replace(/[^a-zA-Z0-9]/g, "-");
 
 const makeMemoryCollector = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const appContext = yield* ApplicationContext;
+
+  // Primary source of real project paths: ~/.claude.json "projects" keys are
+  // the original cwd values; encoding them reproduces the directory name.
+  const readEncodedPathMap = (): Effect.Effect<ReadonlyMap<string, string>> =>
+    Effect.gen(function* () {
+      const home = (yield* appContext.claudeCodePaths).globalClaudeDirectoryPath;
+      const raw = yield* fs
+        .readFileString(path.resolve(home, "..", ".claude.json"))
+        .pipe(Effect.catchAll(() => Effect.succeed(null)));
+      const map = new Map<string, string>();
+      if (raw === null) {
+        return map;
+      }
+      try {
+        const parsed: unknown = JSON.parse(raw);
+        if (typeof parsed === "object" && parsed !== null && "projects" in parsed) {
+          const projects = parsed.projects;
+          if (typeof projects === "object" && projects !== null) {
+            for (const projectPath of Object.keys(projects)) {
+              map.set(encodeProjectPath(projectPath), projectPath);
+            }
+          }
+        }
+      } catch {
+        // fall through with an empty map
+      }
+      return map;
+    });
 
   const readMemoryFile = (filePath: string, name: string): Effect.Effect<MemoryFileEntry | null> =>
     Effect.gen(function* () {
@@ -43,7 +75,53 @@ const makeMemoryCollector = Effect.gen(function* () {
       };
     });
 
-  const collectProjectMemory = (projectDir: string): Effect.Effect<ProjectMemoryEntry | null> =>
+  // The encoded project directory name is lossy (every non-alphanumeric
+  // character becomes "-"), so recover the real path from the "cwd" field
+  // recorded in one of the project's session transcripts.
+  const resolveProjectPath = (
+    projectDir: string,
+    encodedPathMap: ReadonlyMap<string, string>,
+  ): Effect.Effect<string | undefined> =>
+    Effect.gen(function* () {
+      const fromClaudeJson = encodedPathMap.get(path.basename(projectDir));
+      if (fromClaudeJson !== undefined) {
+        return fromClaudeJson;
+      }
+      const entries = yield* fs
+        .readDirectory(projectDir)
+        .pipe(Effect.catchAll(() => Effect.succeed([] as string[])));
+      const sessionFile = entries.find((entry) => entry.endsWith(".jsonl"));
+      if (sessionFile === undefined) {
+        return undefined;
+      }
+
+      const chunk = yield* Effect.scoped(
+        Effect.gen(function* () {
+          const file = yield* fs.open(path.resolve(projectDir, sessionFile));
+          return yield* file.readAlloc(64 * 1024);
+        }),
+      ).pipe(Effect.catchAll(() => Effect.succeed(Option.none<Uint8Array>())));
+
+      const bytes = Option.getOrNull(chunk);
+      if (bytes === null) {
+        return undefined;
+      }
+      const match = new TextDecoder().decode(bytes).match(/"cwd"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      if (match?.[1] === undefined) {
+        return undefined;
+      }
+      try {
+        const decoded: unknown = JSON.parse(`"${match[1]}"`);
+        return typeof decoded === "string" ? decoded : undefined;
+      } catch {
+        return undefined;
+      }
+    });
+
+  const collectProjectMemory = (
+    projectDir: string,
+    encodedPathMap: ReadonlyMap<string, string>,
+  ): Effect.Effect<ProjectMemoryEntry | null> =>
     Effect.gen(function* () {
       const memoryDir = path.resolve(projectDir, "memory");
       if (!(yield* fs.exists(memoryDir).pipe(Effect.catchAll(() => Effect.succeed(false))))) {
@@ -74,25 +152,32 @@ const makeMemoryCollector = Effect.gen(function* () {
       }
       return {
         projectDir: path.basename(projectDir),
+        projectPath: yield* resolveProjectPath(projectDir, encodedPathMap),
         memories,
       };
     });
 
   const collect = Effect.gen(function* () {
     const { claudeProjectsDirPath } = yield* appContext.claudeCodePaths;
+    const encodedPathMap = yield* readEncodedPathMap();
     const entries = yield* fs
       .readDirectory(claudeProjectsDirPath)
       .pipe(Effect.catchAll(() => Effect.succeed([] as string[])));
 
     const projects: ProjectMemoryEntry[] = [];
     for (const entry of entries) {
-      const projectMemory = yield* collectProjectMemory(path.resolve(claudeProjectsDirPath, entry));
+      const projectMemory = yield* collectProjectMemory(
+        path.resolve(claudeProjectsDirPath, entry),
+        encodedPathMap,
+      );
       if (projectMemory !== null) {
         projects.push(projectMemory);
       }
     }
 
-    projects.sort((a, b) => a.projectDir.localeCompare(b.projectDir));
+    projects.sort((a, b) =>
+      (a.projectPath ?? a.projectDir).localeCompare(b.projectPath ?? b.projectDir),
+    );
     return { projects };
   });
 
