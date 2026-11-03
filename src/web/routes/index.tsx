@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { FolderKanbanIcon, SettingsIcon } from "lucide-react";
+import { BrainIcon, FolderKanbanIcon, SettingsIcon } from "lucide-react";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 
 const RouteComponent = () => {
@@ -29,6 +29,18 @@ const RouteComponent = () => {
               <div className="text-lg font-semibold">Configs</div>
               <div className="text-sm text-muted-foreground">
                 Installed MCP servers, plugins and skills
+              </div>
+            </div>
+          </Link>
+          <Link
+            to="/memory"
+            className="flex items-center gap-4 rounded-xl border bg-card p-6 text-card-foreground shadow-sm transition-colors hover:bg-accent"
+          >
+            <BrainIcon className="h-8 w-8 text-muted-foreground" />
+            <div>
+              <div className="text-lg font-semibold">Memory</div>
+              <div className="text-sm text-muted-foreground">
+                Persistent memory notes across projects
               </div>
             </div>
           </Link>

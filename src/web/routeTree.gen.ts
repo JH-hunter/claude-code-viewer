@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as MemoryRouteImport } from './routes/memory'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ConfigsRouteImport } from './routes/configs'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
 import { Route as ProjectsProjectIdSessionRouteImport } from './routes/projects/$projectId/session'
 
+const MemoryRoute = MemoryRouteImport.update({
+  id: '/memory',
+  path: '/memory',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/configs': typeof ConfigsRoute
   '/login': typeof LoginRoute
+  '/memory': typeof MemoryRoute
   '/projects/': typeof ProjectsIndexRoute
   '/projects/$projectId/session': typeof ProjectsProjectIdSessionRoute
 }
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/configs': typeof ConfigsRoute
   '/login': typeof LoginRoute
+  '/memory': typeof MemoryRoute
   '/projects': typeof ProjectsIndexRoute
   '/projects/$projectId/session': typeof ProjectsProjectIdSessionRoute
 }
@@ -61,6 +69,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/configs': typeof ConfigsRoute
   '/login': typeof LoginRoute
+  '/memory': typeof MemoryRoute
   '/projects/': typeof ProjectsIndexRoute
   '/projects/$projectId/session': typeof ProjectsProjectIdSessionRoute
 }
@@ -70,15 +79,23 @@ export interface FileRouteTypes {
     | '/'
     | '/configs'
     | '/login'
+    | '/memory'
     | '/projects/'
     | '/projects/$projectId/session'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/configs' | '/login' | '/projects' | '/projects/$projectId/session'
+  to:
+    | '/'
+    | '/configs'
+    | '/login'
+    | '/memory'
+    | '/projects'
+    | '/projects/$projectId/session'
   id:
     | '__root__'
     | '/'
     | '/configs'
     | '/login'
+    | '/memory'
     | '/projects/'
     | '/projects/$projectId/session'
   fileRoutesById: FileRoutesById
@@ -87,12 +104,20 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ConfigsRoute: typeof ConfigsRoute
   LoginRoute: typeof LoginRoute
+  MemoryRoute: typeof MemoryRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
   ProjectsProjectIdSessionRoute: typeof ProjectsProjectIdSessionRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/memory': {
+      id: '/memory'
+      path: '/memory'
+      fullPath: '/memory'
+      preLoaderRoute: typeof MemoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -135,6 +160,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ConfigsRoute: ConfigsRoute,
   LoginRoute: LoginRoute,
+  MemoryRoute: MemoryRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
   ProjectsProjectIdSessionRoute: ProjectsProjectIdSessionRoute,
 }

@@ -21,6 +21,7 @@ import { claudeCodeRoutes } from "./claudeCodeRoutes.ts";
 import { configsRoutes } from "./configsRoutes.ts";
 import { featureFlagRoutes } from "./featureFlagRoutes.ts";
 import { fileSystemRoutes } from "./fileSystemRoutes.ts";
+import { memoryRoutes } from "./memoryRoutes.ts";
 import { notificationRoutes } from "./notificationRoutes.ts";
 import { projectRoutes } from "./projectRoutes.ts";
 import { schedulerRoutes } from "./schedulerRoutes.ts";
@@ -127,6 +128,7 @@ export const routes = (app: HonoAppType, options: CliOptions) =>
         .route("/api/projects", yield* projectRoutes)
         .route("/api/claude-code", yield* claudeCodeRoutes)
         .route("/api/configs", yield* configsRoutes)
+        .route("/api/memory", yield* memoryRoutes)
         .route("/api/scheduler", yield* schedulerRoutes)
         .route("/api/file-system", yield* fileSystemRoutes)
         .route("/api/search", yield* searchRoutes)

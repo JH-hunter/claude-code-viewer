@@ -97,6 +97,19 @@ export const sessionDetailQuery = (projectId: string, sessionId: string) =>
     },
   }) as const;
 
+export const memoryQuery = {
+  queryKey: ["memory"],
+  queryFn: async () => {
+    const response = await honoClient.api.memory.$get({});
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch memory: ${response.statusText}`);
+    }
+
+    return await response.json();
+  },
+} as const;
+
 export const configsQuery = {
   queryKey: ["configs"],
   queryFn: async () => {
